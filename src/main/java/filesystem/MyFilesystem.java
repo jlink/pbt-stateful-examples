@@ -17,7 +17,7 @@ public class MyFilesystem {
 
 	public void createFolder(String name, @Nullable String parentFolder) {
 		FilesystemResource parent = findFolder(parentFolder);
-		FilesystemResource newResource = new FilesystemResource(name, parent);
+		FilesystemResource newResource = new FilesystemResource(folderName(name), parent);
 		if (folders.contains(newResource) || files.contains(newResource)) {
 			String message = "Resource %s already exists".formatted(newResource);
 			throw new IllegalArgumentException(message);
@@ -50,9 +50,13 @@ public class MyFilesystem {
 			return null;
 		}
 		return folders.stream()
-				.filter(f -> f.name().equals(folder))
+				.filter(f -> f.name().equals(folderName(folder)))
 				.findFirst()
 				.orElseThrow(() -> new IllegalArgumentException("Folder not found: " + folder));
+	}
+
+	private String folderName(String folder) {
+		return folder + "/";
 	}
 
 	public Set<String> listFolders() {
@@ -68,7 +72,7 @@ public class MyFilesystem {
 			if (parent == null) {
 				return "/" + name;
 			}
-			return parent.fullName() + "/" + name;
+			return parent.fullName() + name;
 		}
 	}
 }
