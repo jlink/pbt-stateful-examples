@@ -4,13 +4,14 @@ plugins {
 
 repositories {
 	mavenCentral()
+	maven { url 'https://s01.oss.sonatype.org/content/repositories/snapshots' }
 }
 
 ext {
 	junitPlatformVersion = '1.9.1'
 	junitJupiterVersion = '5.9.1'
 	assertJVersion = '3.23.1'
-	jqwikVersion = '1.7.1'
+	jqwikVersion = '1.7.3-SNAPSHOT'
 }
 
 java {
@@ -39,8 +40,8 @@ dependencies {
 	// Fluent assertions library. You can use any other assertions instead.
 	testImplementation("org.assertj:assertj-core:${assertJVersion}")
 
-	// Optional but recommended to get annotation related API warnings, e.g. for @CheckReturnValue
-	compileOnly("org.jetbrains:annotations:23.0.0")
+	compileOnly('org.jetbrains:annotations:23.1.0')
+	testCompileOnly("org.jetbrains:annotations:23.1.0")
 }
 
 wrapper {
