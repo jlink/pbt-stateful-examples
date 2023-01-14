@@ -21,13 +21,14 @@ class MyFilesystemProperties {
 	@Provide
 	ChainArbitrary<FilesystemModel> filesystemTransformations() {
 		Transformation<FilesystemModel> addRootFolder = modelSupplier -> {
-//			FilesystemModel model = modelSupplier.get();
-			Arbitrary<String> names = Arbitraries.strings()
-					.alpha().ofMinLength(1).ofMaxLength(10)
-					.injectDuplicates(0.8);
-//					.filter(name -> noSuchRootFolderIn(name, model));
+			Arbitrary<String> names = Arbitraries.strings().alpha().ofMinLength(1).ofMaxLength(10);
 			return names.map(name -> {
 				return Transformer.transform("add root folder " + name, fs -> {
+					if (fs.allFolders().contains("/" + name + "/")) {
+						// If there is already a root folder with that name then do nothing.
+						// This has better shrinking behaviour than accessing the model and filtering out duplicates.
+						return fs.doNothing();
+					}
 					return fs.createRootFolder(name);
 				});
 			});
@@ -35,14 +36,8 @@ class MyFilesystemProperties {
 		return Chain.startWith(FilesystemModel::empty)
 				.withTransformation(addRootFolder)
 				.improveShrinkingWith(ChangeDetector::forImmutables)
-				.withMaxTransformations(10);
+				.withMaxTransformations(20);
 
 	}
-
-	private static boolean noSuchRootFolderIn(String name, FilesystemModel model) {
-		return model.allFolders().stream()
-				.noneMatch(folder -> folder.equals("/" + name + "/"));
-	}
-
 
 }

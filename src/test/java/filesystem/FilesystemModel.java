@@ -54,6 +54,10 @@ public record FilesystemModel(Set<Resource> contents, @Nullable Consumer<MyFiles
 				.collect(Collectors.toSet());
 	}
 
+	public FilesystemModel doNothing() {
+		return new FilesystemModel(contents, null);
+	}
+
 	private record Resource(String name, boolean isFolder) {
 		@Override
 		public String toString() {
