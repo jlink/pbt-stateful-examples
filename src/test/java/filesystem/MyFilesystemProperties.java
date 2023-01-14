@@ -1,0 +1,4 @@
+package filesystem;
+
+class MyFilesystemProperties {
+}
