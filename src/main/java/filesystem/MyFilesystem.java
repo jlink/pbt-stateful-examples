@@ -49,10 +49,11 @@ public class MyFilesystem {
 		if (folder == null) {
 			return null;
 		}
+		String folderName = folder.endsWith("/") ? folder : folderName(folder);
 		return folders.stream()
-				.filter(f -> f.name().equals(folderName(folder)))
+				.filter(f -> f.fullName().equals(folderName))
 				.findFirst()
-				.orElseThrow(() -> new IllegalArgumentException("Folder not found: " + folder));
+				.orElseThrow(() -> new IllegalArgumentException("Folder not found: " + folderName));
 	}
 
 	private String folderName(String folder) {

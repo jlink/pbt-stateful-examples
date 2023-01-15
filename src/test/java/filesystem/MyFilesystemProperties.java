@@ -2,10 +2,11 @@ package filesystem;
 
 import net.jqwik.api.*;
 import net.jqwik.api.state.*;
+import org.jetbrains.annotations.NotNull;
 
 class MyFilesystemProperties {
 
-	@Property(tries = 100)
+	@Property(tries = 1000)
 	void checkFilesystemModelAgainstImplementation(
 			@ForAll("filesystemTransformations") Chain<FilesystemModel> chain
 	) {
@@ -20,24 +21,49 @@ class MyFilesystemProperties {
 
 	@Provide
 	ChainArbitrary<FilesystemModel> filesystemTransformations() {
-		Transformation<FilesystemModel> addRootFolder = modelSupplier -> {
+		Transformation<FilesystemModel> addRootFolder = addRootFolder();
+		return Chain.startWith(FilesystemModel::empty)
+				.withTransformation(addRootFolder)
+				.withTransformation(addNestedFolder())
+				.improveShrinkingWith(ChangeDetector::forImmutables)
+				.withMaxTransformations(20);
+
+	}
+
+	@NotNull
+	private static Transformation<FilesystemModel> addRootFolder() {
+		return modelSupplier -> {
 			Arbitrary<String> names = Arbitraries.strings().alpha().ofMinLength(1).ofMaxLength(10);
-			return names.map(name -> {
-				return Transformer.transform("add root folder " + name, fs -> {
+			return names.map(name ->
+				Transformer.transform("add root folder " + name, fs -> {
 					if (fs.allFolders().contains("/" + name + "/")) {
 						// If there is already a root folder with that name then do nothing.
 						// This has better shrinking behaviour than accessing the model and filtering out duplicates.
 						return fs.doNothing();
 					}
 					return fs.createRootFolder(name);
-				});
-			});
+				})
+			);
 		};
-		return Chain.startWith(FilesystemModel::empty)
-				.withTransformation(addRootFolder)
-				.improveShrinkingWith(ChangeDetector::forImmutables)
-				.withMaxTransformations(20);
+	}
 
+	@NotNull
+	private static Transformation<FilesystemModel> addNestedFolder() {
+		return Transformation
+				.when((FilesystemModel model) -> model.allFolders().size() > 0)
+				.provide(model -> {
+					Arbitrary<String> names = Arbitraries.strings().alpha().ofMinLength(1).ofMaxLength(10);
+					Arbitrary<String> parents = Arbitraries.of(model.allFolders());
+					return Combinators.combine(names, parents).as((name, parent) ->
+							Transformer.transform("add folder " + name + " in " + parent, fs -> {
+								if (fs.allFolders().contains(parent + name + "/")) {
+									// If there is already a nested folder with that name then do nothing.
+									// This has better shrinking behaviour than accessing the model and filtering out duplicates.
+									return fs.doNothing();
+								}
+								return fs.createNestedFolder(name, parent);
+							}));
+				});
 	}
 
 }

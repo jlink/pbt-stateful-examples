@@ -29,6 +29,13 @@ public record FilesystemModel(Set<Resource> contents, @Nullable Consumer<MyFiles
 		return new FilesystemModel(newContents, nextOperation);
 	}
 
+	public FilesystemModel createNestedFolder(String name, String parent) {
+		Set<Resource> newContents = new LinkedHashSet<>(this.contents);
+		newContents.add(new Resource(parent + name, true));
+		Consumer<MyFilesystem> nextOperation = fs -> fs.createFolder(name, parent);
+		return new FilesystemModel(newContents, nextOperation);
+	}
+
 	public void operateAndCompare(MyFilesystem fs) {
 		if (operation != null) {
 			operation.accept(fs);
