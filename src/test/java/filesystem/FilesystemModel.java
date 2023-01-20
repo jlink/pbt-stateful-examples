@@ -1,6 +1,5 @@
 package filesystem;
 
-import net.jqwik.api.Arbitrary;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.LinkedHashSet;
@@ -8,7 +7,7 @@ import java.util.Set;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
-import static org.assertj.core.api.Assertions.*;
+import static org.assertj.core.api.Assertions.assertThat;
 
 public record FilesystemModel(Set<Resource> contents, @Nullable Consumer<MyFilesystem> operation) {
 
@@ -45,6 +44,14 @@ public record FilesystemModel(Set<Resource> contents, @Nullable Consumer<MyFiles
 
 	private void compareWithFilesystem(MyFilesystem filesystem) {
 		assertThat(filesystem.listFolders()).containsExactlyInAnyOrderElementsOf(folders());
+		assertThat(filesystem.listFiles()).containsExactlyInAnyOrderElementsOf(files());
+	}
+
+	private Set<String> files() {
+		return contents.stream()
+				.filter(resource -> !resource.isFolder())
+				.map(Resource::toString)
+				.collect(Collectors.toSet());
 	}
 
 	private Set<String> folders() {
@@ -61,8 +68,22 @@ public record FilesystemModel(Set<Resource> contents, @Nullable Consumer<MyFiles
 				.collect(Collectors.toSet());
 	}
 
+	public Set<String> allFiles() {
+		return contents.stream()
+				.filter(resource -> !resource.isFolder())
+				.map(Resource::toString)
+				.collect(Collectors.toSet());
+	}
+
 	public FilesystemModel doNothing() {
 		return new FilesystemModel(contents, null);
+	}
+
+	public FilesystemModel createFile(String name, String parent) {
+		Set<Resource> newContents = new LinkedHashSet<>(this.contents);
+		newContents.add(new Resource(parent + name, false));
+		Consumer<MyFilesystem> nextOperation = fs -> fs.createFile(name, parent);
+		return new FilesystemModel(newContents, nextOperation);
 	}
 
 	private record Resource(String name, boolean isFolder) {

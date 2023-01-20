@@ -29,17 +29,24 @@ public class MyFilesystem {
 		if (parentFolder == null) {
 			throw new IllegalArgumentException("File must have a parent folder");
 		}
-		FilesystemResource parent = findFolder(parentFolder);
 
-		// This is the bug since only file names and not full paths are checked for uniqueness
+		FilesystemResource parent = findFolder(parentFolder);
+		FilesystemResource newResource = new FilesystemResource(name, parent);
+
+		// This is the bug since only file names and not full paths are checked for uniqueness:
 		if (files.stream().anyMatch(file -> file.name().equals(name))) {
 			String message = "File %s already exists".formatted(name);
 			throw new IllegalArgumentException(message);
 		}
 
-		FilesystemResource newResource = new FilesystemResource(name, parent);
+		// This would be the correct check for existing files:
+		// if (files.contains(newResource)) {
+		// 	String message = "A file %s already exists".formatted(newResource);
+		// 	throw new IllegalArgumentException(message);
+		// }
+
 		if (folders.contains(newResource)) {
-			String message = "Resource %s already exists".formatted(newResource);
+			String message = "A folder %s already exists".formatted(newResource);
 			throw new IllegalArgumentException(message);
 		}
 		files.add(newResource);

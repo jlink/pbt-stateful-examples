@@ -21,10 +21,10 @@ class MyFilesystemProperties {
 
 	@Provide
 	ChainArbitrary<FilesystemModel> filesystemTransformations() {
-		Transformation<FilesystemModel> addRootFolder = addRootFolder();
 		return Chain.startWith(FilesystemModel::empty)
-				.withTransformation(addRootFolder)
+				.withTransformation(addRootFolder())
 				.withTransformation(addNestedFolder())
+				.withTransformation(addFile())
 				.improveShrinkingWith(ChangeDetector::forImmutables)
 				.withMaxTransformations(20);
 
@@ -62,6 +62,26 @@ class MyFilesystemProperties {
 									return fs.doNothing();
 								}
 								return fs.createNestedFolder(name, parent);
+							}));
+				});
+	}
+
+	@NotNull
+	private static Transformation<FilesystemModel> addFile() {
+		return Transformation
+				.when((FilesystemModel model) -> model.allFolders().size() > 0)
+				.provide(model -> {
+					Arbitrary<String> fileNames = Arbitraries.strings().alpha()
+							.ofMinLength(1).ofMaxLength(10);
+					Arbitrary<String> parents = Arbitraries.of(model.allFolders());
+					return Combinators.combine(fileNames, parents).as((fileName, parent) ->
+							Transformer.transform("add file " + fileName + " in " + parent, fs -> {
+								if (fs.allFiles().contains(parent + fileName)) {
+									// If there is already a file with that name in this folder then do nothing.
+									// This has better shrinking behaviour than accessing the model and filtering out duplicates.
+									return fs.doNothing();
+								}
+								return fs.createFile(fileName, parent);
 							}));
 				});
 	}
